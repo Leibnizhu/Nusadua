@@ -1,4 +1,4 @@
-package io.github.leibnizhu.nusadua;
+package io.github.leibnizhu.nusadua.annotation;
 
 import java.lang.annotation.*;
 
@@ -6,10 +6,13 @@ import java.lang.annotation.*;
  * @author Leibniz on 2020/06/18 11:40 PM
  */
 @Documented
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
+@Repeatable(MethodOverloads.class)
 public @interface MethodOverload {
-    String field();
+    String field() default "";
+
+    boolean defaultNull() default false;
 
     String defaultString() default "";
 

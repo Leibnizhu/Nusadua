@@ -65,6 +65,13 @@
     </developers>
 
     <dependencies>
+        <!--TODO 调试用，后面要删-->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.6</version>
+        </dependency>
+
         <dependency>
             <groupId>com.sun</groupId>
             <artifactId>tools</artifactId>
@@ -148,35 +155,35 @@
         <plugins>
 
             <!-- 打包jar，MANIFEST.MF中包含Class-Path和Main-Class配置 -->
-<!--            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <manifestEntries>
-                                        <Main-Class>io.github.leibnizhu.vertXearch.MainLauncher</Main-Class>
-                                        <Main-Verticle>io.github.leibnizhu.vertXearch.verticle.HttpSearchVerticle</Main-Verticle>
-                                    </manifestEntries>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
-                                </transformer>
-                            </transformers>
-                            <artifactSet>
-                            </artifactSet>
-                            <outputFile>${project.build.directory}/${finalName}-${project.version}-fat.jar</outputFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>-->
+            <!--            <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <version>2.3</version>
+                            <executions>
+                                <execution>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>shade</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformers>
+                                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                                <manifestEntries>
+                                                    <Main-Class>io.github.leibnizhu.vertXearch.MainLauncher</Main-Class>
+                                                    <Main-Verticle>io.github.leibnizhu.vertXearch.verticle.HttpSearchVerticle</Main-Verticle>
+                                                </manifestEntries>
+                                            </transformer>
+                                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                                <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
+                                            </transformer>
+                                        </transformers>
+                                        <artifactSet>
+                                        </artifactSet>
+                                        <outputFile>${project.build.directory}/${finalName}-${project.version}-fat.jar</outputFile>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>-->
 
             <!-- 复制依赖到target/lib目录 -->
             <plugin>
