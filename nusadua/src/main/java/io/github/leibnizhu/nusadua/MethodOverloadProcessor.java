@@ -48,13 +48,13 @@ public class MethodOverloadProcessor extends AbstractProcessor {
 
 
 //        Set<? extends Element> multiAnnotation = roundEnv.getElementsAnnotatedWith(MethodOverloads.class);
-//        messager.printMessage(Diagnostic.Kind.MANDATORY_WARNING, "Has MethodOverloads annotation:" + multiAnnotation.toString()+","+multiAnnotation.getClass());
+//        messager.printMessage(Diagnostic.Kind.NOTE, "Has MethodOverloads annotation:" + multiAnnotation.toString()+","+multiAnnotation.getClass());
 //        multiAnnotation.stream()
 //                .map(element -> trees.getTree(element))
 //                .forEach(tree -> tree.accept(visitor));
 
 //        Set<? extends Element> annotation = roundEnv.getElementsAnnotatedWith(MethodOverload.class);
-//        messager.printMessage(Diagnostic.Kind.MANDATORY_WARNING, "Has MethodOverload annotation:" + annotation.toString()+","+annotation.getClass());
+//        messager.printMessage(Diagnostic.Kind.NOTE, "Has MethodOverload annotation:" + annotation.toString()+","+annotation.getClass());
 //        annotation.stream()
 //                .map(element -> trees.getTree(element))
 //                .forEach(tree -> tree.accept(visitor));
