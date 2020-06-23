@@ -6,14 +6,10 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
-import io.github.leibnizhu.nusadua.annotation.MethodOverload;
-import io.github.leibnizhu.nusadua.annotation.MethodOverloads;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import java.util.Set;
 
 /**
@@ -28,7 +24,6 @@ public class MethodOverloadProcessor extends AbstractProcessor {
     private TreeMaker treeMaker; //AST
     private Names names;
     private Messager messager;
-    private Filer filer;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -38,26 +33,12 @@ public class MethodOverloadProcessor extends AbstractProcessor {
         this.treeMaker = TreeMaker.instance(context);
         messager = processingEnv.getMessager();
         this.names = Names.instance(context);
-        filer = processingEnv.getFiler();
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         MethodOverloadTranslator visitor = new MethodOverloadTranslator(treeMaker, messager, names);
         roundEnv.getRootElements().forEach(element -> trees.getTree(element).accept(visitor));
-
-
-//        Set<? extends Element> multiAnnotation = roundEnv.getElementsAnnotatedWith(MethodOverloads.class);
-//        messager.printMessage(Diagnostic.Kind.NOTE, "Has MethodOverloads annotation:" + multiAnnotation.toString()+","+multiAnnotation.getClass());
-//        multiAnnotation.stream()
-//                .map(element -> trees.getTree(element))
-//                .forEach(tree -> tree.accept(visitor));
-
-//        Set<? extends Element> annotation = roundEnv.getElementsAnnotatedWith(MethodOverload.class);
-//        messager.printMessage(Diagnostic.Kind.NOTE, "Has MethodOverload annotation:" + annotation.toString()+","+annotation.getClass());
-//        annotation.stream()
-//                .map(element -> trees.getTree(element))
-//                .forEach(tree -> tree.accept(visitor));
         return true;
     }
 }

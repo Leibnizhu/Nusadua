@@ -32,11 +32,14 @@ class MethodOverloadTranslator extends TreeTranslator {
         this.names = names;
     }
 
-    @Override
-    public void visitMethodDef(JCTree.JCMethodDecl jcMethod) {
-        super.visitMethodDef(jcMethod);
-    }
-
+    /**
+     * just override visitClassDef(), no need to override visitMethodDef().
+     * Because when we visitMethodDef, we can read annotation of method, but we cannot get it's class and add method for class.
+     * So we just override visitClassDef(), traverse its methods(defs), and add new overload method to its defs.
+     * When visitClassDef(), just keep default implement and it will visit sub-definition recursively.
+     *
+     * @author Leibniz
+     */
     @Override
     public void visitClassDef(JCTree.JCClassDecl jcClass) {
         String classFullName = jcClass.sym.fullname.toString();
@@ -59,27 +62,8 @@ class MethodOverloadTranslator extends TreeTranslator {
                             classFullName, methodName, jcMethod.params);
                     Map<String, Object> defaultValueMap = new HashMap<>();
                     methodOverloadAnnotationList = validateAndParseAnnotation(jcMethod, methodOverloadAnnotationList, defaultValueMap, errMsgTmpl);
-                    for (JCTree.JCAnnotation annotation : methodOverloadAnnotationList) {
-                        String errMsg = errMsgTmpl + annotation + ", ERROR: ";
-                        messager.printMessage(NOTE, "current Annotation:" + annotation.toString() + "," + annotation.getArguments());
-                        Pair<String, Object> defaultFieldPair = validateAnnotation(jcMethod.params, annotation, errMsg);
-                        if (defaultFieldPair == null) {
-                            continue;
-                        }
-                        defaultValueMap.put(defaultFieldPair.fst, defaultFieldPair.snd);
-                        List<JCTree.JCVariableDecl> newParams = genNewParamList(jcMethod.getParameters(), defaultFieldPair.fst, curMethodSignSet, errMsg);
-                        if (newParams == null) {
-                            continue;
-                        }
-                        List<JCTree.JCStatement> newStatements = genBodyStats(jcMethod, defaultFieldPair);
-                        if (newStatements == null) {
-                            continue;
-                        }
-                        JCTree.JCModifiers flagsOnly = treeMaker.Modifiers(modifiers.flags);
-                        JCTree.JCBlock codeBlock = treeMaker.Block(jcMethod.body.flags, newStatements); //TODO 新建一句，调用原方法；返回空则return
-                        newMethods.add(treeMaker.MethodDef(flagsOnly, jcMethod.name, jcMethod.restype, jcMethod.getTypeParameters(),
-                                newParams, jcMethod.getThrows(), codeBlock, jcMethod.defaultValue));
-                    }
+                    messager.printMessage(NOTE, "All available MethodOverload annotations:" + methodOverloadAnnotationList);
+                    genNewMethods(defaultValueMap, jcMethod, newMethods, curMethodSignSet, errMsgTmpl);
                 });
         messager.printMessage(NOTE, "new Methods:" + newMethods);
         for (JCTree.JCMethodDecl method : newMethods) {
@@ -88,6 +72,16 @@ class MethodOverloadTranslator extends TreeTranslator {
         super.visitClassDef(jcClass);
     }
 
+    /**
+     * validate all MethodOverload annotations, and parse their field name and default value into defaultValueMap
+     *
+     * @param jcMethod                     method to process
+     * @param methodOverloadAnnotationList all MethodOverload annotations
+     * @param defaultValueMap              to store Map<fieldName, defaultValue>
+     * @param errMsgTmpl                   error message template
+     * @return all available MethodOverload annotations
+     * @author Leibniz
+     */
     private List<JCTree.JCAnnotation> validateAndParseAnnotation(JCTree.JCMethodDecl jcMethod, List<JCTree.JCAnnotation> methodOverloadAnnotationList,
                                                                  Map<String, Object> defaultValueMap, String errMsgTmpl) {
         List<JCTree.JCAnnotation> result = List.nil();
@@ -103,20 +97,6 @@ class MethodOverloadTranslator extends TreeTranslator {
         return result;
     }
 
-    private String calMethodSign(List<JCTree.JCVariableDecl> parameterList) {
-        return parameterList.stream()
-                .map(variable -> variable.vartype.toString())
-                .collect(Collectors.joining("_"));
-    }
-
-    private static final Map<String, String> TYPE_TO_ANNOTATION_PROPERTY = new HashMap<>();
-
-    static {
-        TYPE_TO_ANNOTATION_PROPERTY.put("integer", "defaultInt");
-        TYPE_TO_ANNOTATION_PROPERTY.put("character", "defaultChar");
-    }
-
-
     /**
      * Validate the annotation,find field to overload, and its default value
      *
@@ -124,15 +104,25 @@ class MethodOverloadTranslator extends TreeTranslator {
      * @param annotation annotation
      * @param errMsg     error message
      * @return Pair<fieldName, defaultValue>
+     * @author Leibniz
      */
     private Pair<String, Object> validateAnnotation(List<JCTree.JCVariableDecl> params, JCTree.JCAnnotation annotation, String errMsg) {
         Map<String, Object> annotationValueMap = annotation.args.stream()
                 .filter(arg -> arg instanceof JCTree.JCAssign)
                 .map(arg -> (JCTree.JCAssign) arg)
-                .filter(assign -> assign.lhs instanceof JCTree.JCIdent && assign.rhs instanceof JCTree.JCLiteral)
+                .filter(assign -> assign.lhs instanceof JCTree.JCIdent && (assign.rhs instanceof JCTree.JCLiteral || assign.rhs instanceof JCTree.JCNewArray))
                 .collect(Collectors.toMap(
                         assign -> ((JCTree.JCIdent) assign.lhs).getName().toString(),
-                        assign -> ((JCTree.JCLiteral) assign.rhs).getValue()));
+                        assign -> {
+                            if (assign.rhs instanceof JCTree.JCLiteral) {
+                                return ((JCTree.JCLiteral) assign.rhs).getValue();
+                            } else if (assign.rhs instanceof JCTree.JCNewArray) {
+//                                return ((JCTree.JCNewArray) assign.rhs).elems.stream().map(element -> ((JCTree.JCLiteral) element).value).toArray();
+                                return ((JCTree.JCNewArray) assign.rhs).elems;
+                            } else {
+                                return null;
+                            }
+                        }));
         messager.printMessage(NOTE, "parsed Annotation:" + annotationValueMap);
         Object fieldNameObj = annotationValueMap.get("field");
         if (!(fieldNameObj instanceof String)) {
@@ -150,7 +140,8 @@ class MethodOverloadTranslator extends TreeTranslator {
         JCTree.JCVariableDecl fieldParam = fieldParamOpt.get();
         String fieldType = fieldParam.vartype.toString();
         String defaultValueKey = TYPE_TO_ANNOTATION_PROPERTY.getOrDefault(fieldType.toLowerCase(),
-                "default" + fieldType.substring(0, 1).toUpperCase() + fieldType.substring(1));
+                "default" + fieldType.substring(0, 1).toUpperCase() + fieldType.substring(1))
+                .replace("[]", "Arr");
         Object defaultValueObj = annotationValueMap.get(defaultValueKey);
         if (defaultValueObj == null) {
             Object defaultNullObj = annotationValueMap.get("defaultNull");
@@ -167,52 +158,153 @@ class MethodOverloadTranslator extends TreeTranslator {
         return new Pair<>(fieldName, defaultValueObj);
     }
 
-    private List<JCTree.JCVariableDecl> genNewParamList(List<JCTree.JCVariableDecl> originParams,
-                                                        String fieldName, Set<String> methodSignSet, String errMsg) {
+    /**
+     * generate all new methods by MethodOverload annotations
+     *
+     * @param defaultValueMap  Map<fieldName, defaultValue>
+     * @param jcMethod         method to process
+     * @param newMethods       store all new generated methods
+     * @param curMethodSignSet store all method signatures
+     * @param errMsgTmpl       error message template
+     * @author Leibniz
+     */
+    private void genNewMethods(Map<String, Object> defaultValueMap, JCTree.JCMethodDecl jcMethod,
+                               Queue<JCTree.JCMethodDecl> newMethods, Set<String> curMethodSignSet, String errMsgTmpl) {
+        List<String> allElement = List.from(defaultValueMap.keySet());
+        Map<Integer, java.util.List<List<String>>> allCombinationMap = allElement.isEmpty() ? new HashMap<>() :
+                calCombinations(0, List.nil(), new java.util.LinkedList<>(), allElement)
+                        .stream()
+                        .filter(combination -> !combination.isEmpty())
+                        .collect(Collectors.toMap(List::size, combination -> {
+                            java.util.List<List<String>> newSize = new LinkedList<>();
+                            newSize.add(combination);
+                            return newSize;
+                        }, (sizeList1, sizeList2) -> {
+                            sizeList1.addAll(sizeList2);
+                            return sizeList1;
+                        }));
+        if (allCombinationMap.isEmpty()) {
+            return;
+        }
+        LinkedList<Integer> sizeList = new LinkedList<>(allCombinationMap.keySet());
+        Collections.sort(sizeList); //keep process size==1's method first, must not method sign conflict
+        for (Integer size : sizeList) {
+            boolean errorWhenMethodSignConflict = size == 1;
+            for (List<String> fields : allCombinationMap.get(size)) {
+                List<JCTree.JCVariableDecl> newParams = genNewParamList(jcMethod.getParameters(), fields, curMethodSignSet, errMsgTmpl, errorWhenMethodSignConflict);
+                if (newParams == null) {
+                    continue;
+                }
+                List<JCTree.JCStatement> newStatements = genBodyStats(jcMethod, defaultValueMap, fields);
+                JCTree.JCModifiers flagsOnly = treeMaker.Modifiers(jcMethod.mods.flags);
+                JCTree.JCBlock codeBlock = treeMaker.Block(jcMethod.body.flags, newStatements);
+                newMethods.add(treeMaker.MethodDef(flagsOnly, jcMethod.name, jcMethod.restype, jcMethod.getTypeParameters(),
+                        newParams, jcMethod.getThrows(), codeBlock, jcMethod.defaultValue));
+            }
+        }
+    }
+
+    /**
+     * calculate all combinations of MethodOverload fields
+     *
+     * @param n          current process level
+     * @param curSet     current fields
+     * @param curResult  current set of combinations
+     * @param allElement all MethodOverload fields
+     * @return List<List < fieldName>>
+     * @author Leibniz
+     */
+    private java.util.List<List<String>> calCombinations(int n, List<String> curSet, java.util.List<List<String>> curResult, List<String> allElement) {
+        if (allElement.size() == n) {
+            curResult.add(curSet);
+        } else {
+            java.util.List<List<String>> tmpRes = calCombinations(n + 1, curSet.append(allElement.get(n)), curResult, allElement); //当前数字选择加入子集
+            calCombinations(n + 1, curSet, tmpRes, allElement); //当前数字选择不加入子集
+        }
+        return curResult;
+    }
+
+    /**
+     * calculate method signature by method parameters, join by '_'
+     *
+     * @param parameterList method parameter list
+     * @return method signature
+     * @author Leibniz
+     */
+    private String calMethodSign(List<JCTree.JCVariableDecl> parameterList) {
+        return parameterList.stream()
+                .map(variable -> variable.vartype.toString())
+                .collect(Collectors.joining("_"));
+    }
+
+    private static final Map<String, String> TYPE_TO_ANNOTATION_PROPERTY = new HashMap<>();
+
+    static {
+        TYPE_TO_ANNOTATION_PROPERTY.put("integer", "defaultInt");
+        TYPE_TO_ANNOTATION_PROPERTY.put("boolean", "defaultBool");
+        TYPE_TO_ANNOTATION_PROPERTY.put("character", "defaultChar");
+    }
+
+    /**
+     * @param originParams                parameter list of method which to be overloaded
+     * @param fieldNames                  all fields with default value
+     * @param methodSignSet               store all method signatures
+     * @param errMsg                      error message template
+     * @param errorWhenMethodSignConflict when method signature, errorWhenMethodSignConflict determine whether throw compile error
+     * @return new method parameter list, excluded fields with default value
+     * @author Leibniz
+     */
+    private List<JCTree.JCVariableDecl> genNewParamList(List<JCTree.JCVariableDecl> originParams, List<String> fieldNames,
+                                                        Set<String> methodSignSet, String errMsg, boolean errorWhenMethodSignConflict) {
         List<JCTree.JCVariableDecl> newParamList = List.from(originParams.stream()
-                .filter(variable -> !fieldName.equals(variable.name.toString()))
+                .filter(variable -> !fieldNames.contains(variable.name.toString()))
                 .collect(Collectors.toList()));
         String newMethodSign = calMethodSign(newParamList);
         if (methodSignSet.contains(newMethodSign)) {
-            messager.printMessage(ERROR, String.format(
-                    errMsg + "method with same signature (%s) already existed! Can not continue!",
-                    newParamList));
+            messager.printMessage(errorWhenMethodSignConflict ? ERROR : MANDATORY_WARNING,
+                    String.format(errMsg + "method with same signature (%s) already existed! Can not continue!", newParamList));
             return null;
         }
         methodSignSet.add(newMethodSign);
         return newParamList;
     }
 
-    private List<JCTree.JCStatement> genBodyStats(JCTree.JCMethodDecl jcMethod, Pair<String, Object> defaultFieldPair) {
+    /**
+     * @param jcMethod        method to process
+     * @param defaultValueMap Map<fieldName, defaultValue>
+     * @param fields          all fields with default value
+     * @return new overload method's body, just one line of return (or even no return, just call original method)
+     * @author Leibniz
+     */
+    private List<JCTree.JCStatement> genBodyStats(JCTree.JCMethodDecl jcMethod, Map<String, Object> defaultValueMap, List<String> fields) {
         List<JCTree.JCVariableDecl> originParams = jcMethod.params;
         Name methodName = jcMethod.name;
         JCTree.JCExpression returnType = jcMethod.restype;
 
-//        List<JCTree.JCExpression> argTypeList = List.from(originParams.stream().map(v -> v.vartype).collect(Collectors.toList()));
         List<JCTree.JCExpression> argList = List.nil();
         for (JCTree.JCVariableDecl originParam : originParams) {
             String argName = originParam.name.toString();
-            if (defaultFieldPair.fst.equals(argName)) {
-                if (defaultFieldPair.snd == null) {
-                    argList = argList.append(treeMaker.Literal(TypeTag.BOT,null));
+            if (fields.contains(argName)) { //argument with default value
+                Object defaultValue = defaultValueMap.get(argName);
+                if (defaultValue == null) {
+                    argList = argList.append(treeMaker.Literal(TypeTag.BOT, null));
+                } else if (defaultValue.getClass().isArray()) {
+                    argList = argList.append(treeMaker.Literal(TypeTag.ARRAY, defaultValue)); //FIXME
+                } else if (defaultValue instanceof List) {
+                    argList = argList.append(treeMaker.NewArray(null, List.nil(), (List<JCTree.JCExpression>) defaultValue)); //FIXME
                 } else {
-                    argList = argList.append(treeMaker.Literal(defaultFieldPair.snd));
+                    argList = argList.append(treeMaker.Literal(defaultValue));
                 }
             } else {
                 argList = argList.append(memberAccess(argName));
             }
         }
         JCTree.JCExpression callOriginMethod = treeMaker.Apply(List.nil(), memberAccess(methodName.toString()), argList);
-//        JCTree.JCExpression callOriginMethod = treeMaker.App(memberAccess(methodName.toString()), argList);
         if ("void".equals(returnType.type.toString())) {
             return List.of(treeMaker.Exec(callOriginMethod));
         } else {
             return List.of(treeMaker.Return(callOriginMethod));
         }
-    }
-
-    private Name getNameFromString(String s) {
-        return names.fromString(s);
     }
 
     private JCTree.JCExpression memberAccess(String components) {
@@ -222,5 +314,9 @@ class MethodOverloadTranslator extends TreeTranslator {
             expr = treeMaker.Select(expr, getNameFromString(componentArray[i]));
         }
         return expr;
+    }
+
+    private Name getNameFromString(String s) {
+        return names.fromString(s);
     }
 }
