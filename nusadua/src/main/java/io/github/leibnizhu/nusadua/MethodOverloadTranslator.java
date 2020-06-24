@@ -43,7 +43,7 @@ class MethodOverloadTranslator extends TreeTranslator {
      */
     @Override
     public void visitClassDef(JCTree.JCClassDecl jcClass) {
-        String classFullName = jcClass.sym.fullname.toString();
+        String classFullName = Optional.ofNullable(jcClass.sym).map(s -> s.fullname).map(Object::toString).orElse("");
         Queue<JCTree.JCMethodDecl> newMethods = new LinkedList<>();
         Map<String, Set<String>> methodSignMap = new HashMap<>(); //Map<MethodName, Set<ParameterTypeList>>
         jcClass.defs.stream()

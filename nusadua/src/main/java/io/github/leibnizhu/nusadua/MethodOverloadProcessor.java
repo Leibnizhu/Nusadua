@@ -3,6 +3,7 @@ package io.github.leibnizhu.nusadua;
 import com.google.auto.service.AutoService;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
@@ -38,7 +39,12 @@ public class MethodOverloadProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         MethodOverloadTranslator visitor = new MethodOverloadTranslator(treeMaker, messager, names);
-        roundEnv.getRootElements().forEach(element -> trees.getTree(element).accept(visitor));
+        roundEnv.getRootElements().forEach(element -> {
+            JCTree tree = trees.getTree(element);
+            if (tree != null) {
+                tree.accept(visitor);
+            }
+        });
         return true;
     }
 }
