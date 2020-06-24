@@ -97,6 +97,17 @@ class MethodOverloadTranslator extends TreeTranslator {
         return result;
     }
 
+    private static final Map<String, String> TYPE_TO_ANNOTATION_PROPERTY = new HashMap<>();
+
+    static {
+        TYPE_TO_ANNOTATION_PROPERTY.put("integer", "defaultInt");
+        TYPE_TO_ANNOTATION_PROPERTY.put("integer[]", "defaultIntArr");
+        TYPE_TO_ANNOTATION_PROPERTY.put("boolean", "defaultBool");
+        TYPE_TO_ANNOTATION_PROPERTY.put("boolean[]", "defaultBoolArr");
+        TYPE_TO_ANNOTATION_PROPERTY.put("character", "defaultChar");
+        TYPE_TO_ANNOTATION_PROPERTY.put("character[]", "defaultCharArr");
+    }
+
     /**
      * Validate the annotation,find field to overload, and its default value
      *
@@ -140,8 +151,7 @@ class MethodOverloadTranslator extends TreeTranslator {
         JCTree.JCVariableDecl fieldParam = fieldParamOpt.get();
         String fieldType = fieldParam.vartype.toString();
         String defaultValueKey = TYPE_TO_ANNOTATION_PROPERTY.getOrDefault(fieldType.toLowerCase(),
-                "default" + fieldType.substring(0, 1).toUpperCase() + fieldType.substring(1))
-                .replace("[]", "Arr");
+                "default" + fieldType.substring(0, 1).toUpperCase() + fieldType.substring(1).replace("[]", "Arr"));
         Object defaultValueObj = annotationValueMap.get(defaultValueKey);
         if (defaultValueObj == null) {
             Object defaultNullObj = annotationValueMap.get("defaultNull");
@@ -235,14 +245,6 @@ class MethodOverloadTranslator extends TreeTranslator {
         return parameterList.stream()
                 .map(variable -> variable.vartype.toString())
                 .collect(Collectors.joining("_"));
-    }
-
-    private static final Map<String, String> TYPE_TO_ANNOTATION_PROPERTY = new HashMap<>();
-
-    static {
-        TYPE_TO_ANNOTATION_PROPERTY.put("integer", "defaultInt");
-        TYPE_TO_ANNOTATION_PROPERTY.put("boolean", "defaultBool");
-        TYPE_TO_ANNOTATION_PROPERTY.put("character", "defaultChar");
     }
 
     /**

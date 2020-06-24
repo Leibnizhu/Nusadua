@@ -101,4 +101,32 @@ public class NusaduaTest {
                 Arrays.toString(str), Arrays.toString(b), Arrays.toString(s), Arrays.toString(i),
                 Arrays.toString(l), Arrays.toString(f), Arrays.toString(d), Arrays.toString(bool), Arrays.toString(c)));
     }
+
+    @Test
+    public void boxedTypeArrsTest() {
+        System.out.println("boxedTypeArrsTest start====");
+        printBoxedTypeArrs(new String[]{"a", "b", "c"}, new Byte[]{0, 127}, new Short[]{0, 1, 2}, new Integer[]{-1, 0, 1},
+                new Long[]{0L, -1L}, new Float[]{1f, 2f}, new Double[]{1.0, 3.0}, new Boolean[]{true, false}, new Character[]{'d', '?'});
+        //omit str
+        printBoxedTypeArrs(new Byte[]{0, 127}, new Short[]{0, 1, 2}, new Integer[]{-1, 0, 1},
+                new Long[]{0L, -1L}, new Float[]{1f, 2f}, new Double[]{1.0, 3.0}, new Boolean[]{true, false}, new Character[]{'d', '?'});
+        //omit i
+        printBoxedTypeArrs(new String[]{"a", "b", "c"}, new Byte[]{0, 127}, new Short[]{0, 1, 2},
+                new Long[]{0L, -1L}, new Float[]{1f, 2f}, new Double[]{1.0, 3.0}, new Boolean[]{true, false}, new Character[]{'d', '?'});
+//        //omit str and i
+        printBoxedTypeArrs(new Byte[]{0, 127}, new Short[]{0, 1, 2}, new Long[]{0L, -1L},
+                new Float[]{1f, 2f}, new Double[]{1.0, 3.0}, new Boolean[]{true, false}, new Character[]{'d', '?'});
+//        //omit str and i and b
+        printBoxedTypeArrs(new Short[]{0, 1, 2}, new Long[]{0L, -1L},
+                new Float[]{1f, 2f}, new Double[]{1.0, 3.0}, new Boolean[]{true, false}, new Character[]{'d', '?'});
+    }
+
+    @MethodOverload(field = "b", defaultNull = true)
+    @MethodOverload(field = "i", defaultIntArr = {3, 2, 1})
+    @MethodOverload(field = "str", defaultStringArr = {"hahaha", "hehehe", "xixixi"})
+    private void printBoxedTypeArrs(String[] str, Byte[] b, Short[] s, Integer[] i, Long[] l, Float[] f, Double[] d, Boolean[] bool, Character[] c) {
+        System.out.println(String.format("String=%s, byte=%s, short=%s, int=%s, long=%s, float=%s, double=%s, boolean=%s, char=%s",
+                Arrays.toString(str), Arrays.toString(b), Arrays.toString(s), Arrays.toString(i),
+                Arrays.toString(l), Arrays.toString(f), Arrays.toString(d), Arrays.toString(bool), Arrays.toString(c)));
+    }
 }
