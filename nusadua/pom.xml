@@ -117,6 +117,27 @@
                             <attach>true</attach>
                         </configuration>
                     </plugin>
+                    <!-- java doc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${javadoc-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <links>
+                                <link>
+                                    http://docs.oracle.com/javase/${javadoc.version}/docs/api
+                                </link>
+                            </links>
+                        </configuration>
+                    </plugin>
                     <!--gpg签名-->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -154,36 +175,6 @@
 
         <plugins>
 
-            <!-- 打包jar，MANIFEST.MF中包含Class-Path和Main-Class配置 -->
-            <!--            <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-shade-plugin</artifactId>
-                            <version>2.3</version>
-                            <executions>
-                                <execution>
-                                    <phase>package</phase>
-                                    <goals>
-                                        <goal>shade</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformers>
-                                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                                <manifestEntries>
-                                                    <Main-Class>io.github.leibnizhu.vertXearch.MainLauncher</Main-Class>
-                                                    <Main-Verticle>io.github.leibnizhu.vertXearch.verticle.HttpSearchVerticle</Main-Verticle>
-                                                </manifestEntries>
-                                            </transformer>
-                                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                                <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
-                                            </transformer>
-                                        </transformers>
-                                        <artifactSet>
-                                        </artifactSet>
-                                        <outputFile>${project.build.directory}/${finalName}-${project.version}-fat.jar</outputFile>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>-->
 
             <!-- 复制依赖到target/lib目录 -->
             <plugin>
