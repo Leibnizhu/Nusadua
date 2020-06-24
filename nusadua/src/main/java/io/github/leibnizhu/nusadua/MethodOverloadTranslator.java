@@ -1,6 +1,7 @@
 package io.github.leibnizhu.nusadua;
 
 import com.sun.source.tree.Tree;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -121,7 +122,8 @@ class MethodOverloadTranslator extends TreeTranslator {
         Map<String, Object> annotationValueMap = annotation.args.stream()
                 .filter(arg -> arg instanceof JCTree.JCAssign)
                 .map(arg -> (JCTree.JCAssign) arg)
-                .filter(assign -> assign.lhs instanceof JCTree.JCIdent && (assign.rhs instanceof JCTree.JCLiteral || assign.rhs instanceof JCTree.JCNewArray))
+                .filter(assign -> assign.lhs instanceof JCTree.JCIdent &&
+                        (assign.rhs instanceof JCTree.JCLiteral || assign.rhs instanceof JCTree.JCNewArray || assign.rhs instanceof JCTree.JCTypeCast))
                 .collect(Collectors.toMap(
                         assign -> ((JCTree.JCIdent) assign.lhs).getName().toString(),
                         assign -> {
@@ -130,7 +132,10 @@ class MethodOverloadTranslator extends TreeTranslator {
                             } else if (assign.rhs instanceof JCTree.JCNewArray) {
 //                                return ((JCTree.JCNewArray) assign.rhs).elems.stream().map(element -> ((JCTree.JCLiteral) element).value).toArray();
                                 return ((JCTree.JCNewArray) assign.rhs).elems;
+                            } else if (assign.rhs instanceof JCTree.JCTypeCast) {
+                                return ((JCTree.JCLiteral) ((JCTree.JCTypeCast) assign.rhs).expr).value;
                             } else {
+                                //impossible
                                 return null;
                             }
                         }));
@@ -184,7 +189,7 @@ class MethodOverloadTranslator extends TreeTranslator {
         Map<Integer, java.util.List<List<String>>> allCombinationMap = allElement.isEmpty() ? new HashMap<>() :
                 calCombinations(0, List.nil(), new java.util.LinkedList<>(), allElement)
                         .stream()
-                        .filter(combination -> !combination.isEmpty())
+                        .filter(combination -> !combination.isEmpty()) //drop empty default value method(equals to original method)
                         .collect(Collectors.toMap(List::size, combination -> {
                             java.util.List<List<String>> newSize = new LinkedList<>();
                             newSize.add(combination);
@@ -288,16 +293,35 @@ class MethodOverloadTranslator extends TreeTranslator {
             String argName = originParam.name.toString();
             if (fields.contains(argName)) { //argument with default value
                 Object defaultValue = defaultValueMap.get(argName);
+                JCTree.JCExpression defaultValueArg;
+                boolean needCast = true;
                 if (defaultValue == null) {
-                    argList = argList.append(treeMaker.Literal(TypeTag.BOT, null));
+                    defaultValueArg = treeMaker.Literal(TypeTag.BOT, null);
+                    needCast = false;
                 } else if (defaultValue.getClass().isArray()) {
-                    argList = argList.append(treeMaker.Literal(TypeTag.ARRAY, defaultValue)); //FIXME
+                    defaultValueArg = treeMaker.Literal(TypeTag.ARRAY, defaultValue); //FIXME
                 } else if (defaultValue instanceof List) {
                     JCTree.JCExpression arrayType = originParam.vartype instanceof JCTree.JCArrayTypeTree ?
                             ((JCTree.JCArrayTypeTree) originParam.vartype).elemtype : null;
-                    argList = argList.append(treeMaker.NewArray(arrayType, List.nil(), (List<JCTree.JCExpression>) defaultValue)); //FIXME
+                    defaultValueArg = treeMaker.NewArray(arrayType, List.nil(), (List<JCTree.JCExpression>) defaultValue);
+                } else if (defaultValue instanceof Character) {
+                    int charIntValue = (Character) defaultValue;
+                    defaultValueArg = treeMaker.Literal(charIntValue);
                 } else {
-                    argList = argList.append(treeMaker.Literal(defaultValue));
+                    defaultValueArg = treeMaker.Literal(defaultValue);
+                }
+                Type castType = originParam.vartype.type;
+                if (Short.class.getName().equals(castType.toString())) {
+                    castType = new Type.JCPrimitiveType(TypeTag.SHORT, null).constType(0);
+                } else if (Character.class.getName().equals(castType.toString())) {
+                    castType = new Type.JCPrimitiveType(TypeTag.CHAR, null).constType(0);
+                } else if (Byte.class.getName().equals(castType.toString())) {
+                    castType = new Type.JCPrimitiveType(TypeTag.BYTE, null).constType(0);
+                }
+                if (needCast) {
+                    argList = argList.append(treeMaker.TypeCast(castType, defaultValueArg));
+                } else {
+                    argList = argList.append(defaultValueArg);
                 }
             } else {
                 argList = argList.append(memberAccess(argName));

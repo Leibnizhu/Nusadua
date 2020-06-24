@@ -18,7 +18,7 @@ public @interface MethodOverload {
 
     byte defaultByte() default 0;
 
-    short defaultShot() default 0;
+    short defaultShort() default 0;
 
     int defaultInt() default 0;
 
@@ -36,7 +36,7 @@ public @interface MethodOverload {
 
     byte[] defaultByteArr() default {};
 
-    short[] defaultShotArr() default {};
+    short[] defaultShortArr() default {};
 
     int[] defaultIntArr() default {};
 
