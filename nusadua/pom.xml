@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.leibnizhu</groupId>
     <artifactId>nusadua</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <name>nusadua</name>
     <url>https://github.com/Leibnizhu/Nusadua</url>
     <description>Java Method Overload Optimizer</description>

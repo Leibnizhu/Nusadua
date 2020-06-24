@@ -10,7 +10,7 @@ Add dependency, for example, in Maven `pom.xml` file:
 <dependency>
     <groupId>io.github.leibnizhu</groupId>
     <artifactId>nusadua</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 In Scala, we define a method with default value like:

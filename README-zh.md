@@ -10,7 +10,7 @@ Nusadua为Java提供了方法参数默认值重载的语法糖, 可以用来简�
 <dependency>
     <groupId>io.github.leibnizhu</groupId>
     <artifactId>nusadua</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 在Scala里, 是这样定义方法参数的默认值的:
