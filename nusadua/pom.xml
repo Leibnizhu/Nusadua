@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.github.leibnizhu</groupId>
+    <artifactId>nusadua</artifactId>
+    <version>0.0.1</version>
+    <name>nusadua</name>
+    <url>https://github.com/Leibnizhu/Nusadua</url>
+    <description>Java Method Overload Optimizer</description>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <finalName>Nusadua</finalName>
+        <slf4j.version>1.7.24</slf4j.version>
+        <logback.version>1.1.11</logback.version>
+        <java.version>1.8</java.version>
+        <javadoc.version>8</javadoc.version>
+        <compiler-plugin.version>3.6.2</compiler-plugin.version>
+        <war-plugin.version>3.1.0</war-plugin.version>
+        <clean-plugin.version>3.0.0</clean-plugin.version>
+        <resources-plugin.version>3.0.2</resources-plugin.version>
+        <surefire-plugin.version>2.21.0</surefire-plugin.version>
+        <jar-plugin.version>3.0.2</jar-plugin.version>
+        <source-plugin.version>3.0.1</source-plugin.version>
+        <javadoc-plugin.version>2.9.1</javadoc-plugin.version>
+        <gpg-plugin.version>1.5</gpg-plugin.version>
+    </properties>
+
+    <licenses>
+        <license>
+            <name>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <tag>master</tag>
+        <url>https://github.com/Leibnizhu/Nusadua</url>
+        <connection>scm:git:git@github.com:Leibnizhu/Nusadua.git</connection>
+        <developerConnection>scm:git:git@github.com:Leibnizhu/Nusadua.git</developerConnection>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>oss</id>
+            <uniqueVersion>false</uniqueVersion>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <developers>
+        <developer>
+            <id>Leibniz007</id>
+            <name>Leibniz</name>
+            <email>Leibnizhu@gmail.com</email>
+        </developer>
+    </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.sun</groupId>
+            <artifactId>tools</artifactId>
+            <version>1.8</version>
+            <scope>system</scope>
+            <systemPath>${java.home}/../lib/tools.jar</systemPath>
+        </dependency>
+
+        <!--通过SPI的方式加载注解处理器-->
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <version>1.0-rc4</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.google.auto</groupId>
+            <artifactId>auto-common</artifactId>
+            <version>0.10</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <!--源码打jar包-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>${source-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <attach>true</attach>
+                        </configuration>
+                    </plugin>
+                    <!--gpg签名-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${gpg-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <repository>
+                    <id>oss</id>
+                    <url>
+                        https://oss.sonatype.org/service/local/staging/deploy/maven2/
+                    </url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+
+            <!-- 打包jar，MANIFEST.MF中包含Class-Path和Main-Class配置 -->
+            <!--            <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <version>2.3</version>
+                            <executions>
+                                <execution>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>shade</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformers>
+                                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                                <manifestEntries>
+                                                    <Main-Class>io.github.leibnizhu.vertXearch.MainLauncher</Main-Class>
+                                                    <Main-Verticle>io.github.leibnizhu.vertXearch.verticle.HttpSearchVerticle</Main-Verticle>
+                                                </manifestEntries>
+                                            </transformer>
+                                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                                <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
+                                            </transformer>
+                                        </transformers>
+                                        <artifactSet>
+                                        </artifactSet>
+                                        <outputFile>${project.build.directory}/${finalName}-${project.version}-fat.jar</outputFile>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>-->
+
+            <!-- 复制依赖到target/lib目录 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/lib
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
