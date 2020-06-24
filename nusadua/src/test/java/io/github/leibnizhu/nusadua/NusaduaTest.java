@@ -129,4 +129,11 @@ public class NusaduaTest {
                 Arrays.toString(str), Arrays.toString(b), Arrays.toString(s), Arrays.toString(i),
                 Arrays.toString(l), Arrays.toString(f), Arrays.toString(d), Arrays.toString(bool), Arrays.toString(c)));
     }
+
+    @MethodOverload(field = "str1", defaultString = "true")
+    @MethodOverload(field = "i", defaultInt = -1)
+    @MethodOverload(field = "str2", defaultString = "false")
+    public void multiSignConflict(String str1, int i, String str2) {
+        System.out.println(String.format("String1=%s, int=%s, String2=%s", str1, i, str2));
+    }
 }
