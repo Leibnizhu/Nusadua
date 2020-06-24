@@ -1,0 +1,39 @@
+<idea-plugin>
+  <id>io.github.leibnizhu.busadua.plugin</id>
+  <name>Nusadua</name>
+  <version>0.0.1</version>
+  <vendor email="leibnizhu@gmail.com" url="https://github.com/Leibnizhu/Nusadua">Leibniz</vendor>
+
+  <description><![CDATA[
+      Nusadua is a java method overload syntactic sugar, you can use it to simplify your code. This is IDEA plugin for Nusadua support.
+    ]]></description>
+
+  <category>Tools Integration</category>
+
+  <change-notes><![CDATA[
+      <ul>
+        <li>v0.0.1 init, support Nusadua generated methods(overload method with default value(s))</li>
+      </ul>
+    ]]>
+  </change-notes>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="173.0"/>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.java</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+    <applicationService serviceInterface="io.github.leibnizhu.nusadua.plugin.MethodOverloadHandler"
+                        serviceImplementation="io.github.leibnizhu.nusadua.plugin.impl.MethodOverloadHandlerImpl"/>
+  </extensions>
+
+  <actions>
+    <!-- Add your actions here -->
+  </actions>
+
+</idea-plugin>
