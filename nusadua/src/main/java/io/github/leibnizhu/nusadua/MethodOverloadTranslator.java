@@ -291,7 +291,9 @@ class MethodOverloadTranslator extends TreeTranslator {
                 } else if (defaultValue.getClass().isArray()) {
                     argList = argList.append(treeMaker.Literal(TypeTag.ARRAY, defaultValue)); //FIXME
                 } else if (defaultValue instanceof List) {
-                    argList = argList.append(treeMaker.NewArray(null, List.nil(), (List<JCTree.JCExpression>) defaultValue)); //FIXME
+                    JCTree.JCExpression arrayType = originParam.vartype instanceof JCTree.JCArrayTypeTree ?
+                            ((JCTree.JCArrayTypeTree) originParam.vartype).elemtype : null;
+                    argList = argList.append(treeMaker.NewArray(arrayType, List.nil(), (List<JCTree.JCExpression>) defaultValue)); //FIXME
                 } else {
                     argList = argList.append(treeMaker.Literal(defaultValue));
                 }

@@ -88,9 +88,12 @@ public class NusaduaTest {
         //omit str and i
         printPrimitiveTypeArrs(new byte[]{0, 127}, new short[]{0, 1, 2}, new long[]{0L, -1L},
                 new float[]{1, 2}, new double[]{1, 3}, new boolean[]{true, false}, new char[]{'d', '?'});
+        //omit str and i and b
+        printPrimitiveTypeArrs(new short[]{0, 1, 2}, new long[]{0L, -1L},
+                new float[]{1, 2}, new double[]{1, 3}, new boolean[]{true, false}, new char[]{'d', '?'});
     }
 
-    @Generated("d")
+    @MethodOverload(field = "b", defaultNull = true)
     @MethodOverload(field = "i", defaultIntArr = {1, 2, 3})
     @MethodOverload(field = "str", defaultStringArr = {"hahaha", "hehehe", "xixixi"})
     private void printPrimitiveTypeArrs(String[] str, byte[] b, short[] s, int[] i, long[] l, float[] f, double[] d, boolean[] bool, char[] c) {
