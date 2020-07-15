@@ -24,12 +24,12 @@ public class NusaduaAugmentProvider extends PsiAugmentProvider {
     @NotNull
     @Override
     protected <Psi extends PsiElement> List<Psi> getAugments(@NotNull PsiElement element, @NotNull Class<Psi> type) {
+        MethodOverloadHandler methodOverloadHandler = MethodOverloadHandler.getInstance();
         if (type == PsiClass.class && element instanceof PsiClass) {
-            for (PsiMethod method : ((PsiClass) element).getMethods()) {
-                System.out.println(element + "." + method.toString() + ":" + Arrays.toString(method.getAnnotations()));
-                for (PsiAnnotation annotation : method.getAnnotations()) {
-                    System.out.println(annotation.findAttributeValue("field"));
-                }
+            PsiClass psiClass = (PsiClass) element;
+            boolean hasMethodOverload = Arrays.stream(psiClass.getMethods()).anyMatch(methodOverloadHandler::acceptable);
+            if (hasMethodOverload) {
+                methodOverloadHandler.handle(psiClass);
             }
         }
         return super.getAugments(element, type);
