@@ -1,5 +1,6 @@
 package io.github.leibnizhu.nusadua.plugin;
 
+import com.intellij.lang.jvm.annotation.*;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -10,9 +11,35 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class PsiAnnotationUtil {
+  public static Object getAnnotationValue(PsiAnnotation annotation, String attrName) {
+    JvmAnnotationAttribute attr = annotation.findAttribute(attrName);
+    if (attr == null) {
+      return null;
+    } else {
+      return getAnnotationValue(attr.getAttributeValue());
+    }
+  }
+
+  public static Object getAnnotationValue(JvmAnnotationAttributeValue attrValue) {
+    if (attrValue instanceof JvmAnnotationConstantValue) {
+      return ((JvmAnnotationConstantValue) attrValue).getConstantValue();
+    } else if (attrValue instanceof JvmAnnotationClassValue) {
+      return ((JvmAnnotationClassValue) attrValue).getClazz(); //FIXME
+    } else if (attrValue instanceof JvmAnnotationEnumFieldValue) {
+      return ((JvmAnnotationEnumFieldValue) attrValue).getContainingClass(); //FIXME
+    } else if (attrValue instanceof JvmAnnotationArrayValue) {
+      return ((JvmAnnotationArrayValue) attrValue).getValues().stream()
+              .map(PsiAnnotationUtil::getAnnotationValue)
+              .filter(Objects::nonNull)
+              .toArray();
+    } else {
+      return null;
+    }
+  }
 
   @NotNull
   public static PsiAnnotation createPsiAnnotation(@NotNull PsiModifierListOwner psiModifierListOwner, @NotNull Class<? extends Annotation> annotationClass) {
