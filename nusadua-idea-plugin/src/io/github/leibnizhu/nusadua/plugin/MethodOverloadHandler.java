@@ -4,9 +4,12 @@ import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.*;
+import com.sun.tools.javac.tree.JCTree;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.sun.tools.javac.util.List.nil;
 
 /**
  * @author Leibniz on 2020/06/25 12:20 AM
@@ -14,6 +17,7 @@ import java.util.stream.Collectors;
 public class MethodOverloadHandler {
     private static final Logger log = Logger.getInstance(MethodOverloadHandler.class);
     private static final String METHOD_OVERLOAD_ANNOTATION_NAME = "MethodOverload";
+    private static final String METHOD_OVERLOAD_ANNOTATION_FULL_CLASS_NAME = "io.github.leibnizhu.nusadua.annotation.MethodOverload";
 
     public static MethodOverloadHandler getInstance() {
         return ServiceManager.getService(MethodOverloadHandler.class);
@@ -28,13 +32,16 @@ public class MethodOverloadHandler {
             String originSign = calMethodSign(method.getParameterList().getParameters());
             curMethodSignSet.add(originSign);
             List<PsiAnnotation> methodOverloadAnnotationList = Arrays.stream(method.getAnnotations())
-                    .filter(annotation -> METHOD_OVERLOAD_ANNOTATION_NAME.equals(annotation.getQualifiedName()))
+                    .filter(annotation -> {
+                        String annotationName = annotation.getQualifiedName();
+                        return METHOD_OVERLOAD_ANNOTATION_NAME.equals(annotationName) || METHOD_OVERLOAD_ANNOTATION_FULL_CLASS_NAME.equals(annotationName);
+                    })
                     .collect(Collectors.toList());
             if (!methodOverloadAnnotationList.isEmpty()) {
                 Map<String, String> methodParamTypeMap = parseParamTypeMap(method);
                 Map<String, Object> defaultValueMap = validateAndParseAnnotation(method, methodOverloadAnnotationList, methodParamTypeMap);
-                System.out.println(defaultValueMap.toString());
-                newMethods.addAll(genNewMethods(defaultValueMap, method, newMethods, curMethodSignSet));
+                System.out.println(methodName + ":" + defaultValueMap.toString());
+                genNewMethods(defaultValueMap, method, newMethods, curMethodSignSet);
             }
         }
     }
@@ -51,8 +58,60 @@ public class MethodOverloadHandler {
         return paramTypeMap;
     }
 
-    private Collection<? extends PsiMethod> genNewMethods(Map<String, Object> defaultValueMap, PsiMethod method, Queue<PsiMethod> newMethods, Set<String> curMethodSignSet) {
-        return new ArrayList<>();
+    private void genNewMethods(Map<String, Object> defaultValueMap, PsiMethod method, Queue<PsiMethod> newMethods, Set<String> curMethodSignSet) {
+        //TODO
+        //All parameters to calculate
+        List<String> allElement = new ArrayList<>(defaultValueMap.keySet());
+        Map<Integer, List<List<String>>> allCombinationMap = allElement.isEmpty() ? new HashMap<>() :
+                calCombinations(0, nil(), new LinkedList<>(), allElement) //calculate Cartesian Product
+                        .stream()
+                        .filter(combination -> !combination.isEmpty()) //drop empty default value method(equals to original method)
+                        .collect(Collectors.toMap(List::size, combination -> {
+                            List<List<String>> newSize = new LinkedList<>();
+                            newSize.add(combination);
+                            return newSize;
+                        }, (sizeList1, sizeList2) -> {
+                            sizeList1.addAll(sizeList2);
+                            return sizeList1;
+                        }));
+        if (allCombinationMap.isEmpty()) {
+            return;
+        }
+        LinkedList<Integer> sizeList = new LinkedList<>(allCombinationMap.keySet());
+        Collections.sort(sizeList); //keep process size==1's method first, must not method sign conflict
+        for (Integer size : sizeList) {
+            boolean errorWhenMethodSignConflict = size == 1;
+            for (List<String> fields : allCombinationMap.get(size)) {
+                //TODO use NusaduaLightMethodBuilder, to:
+                // generate new parameter list
+                // generate new parameter value list(statement)
+                // generate method access flag and code block
+                // generate new method, and add to newMethods
+            }
+        }
+        return;
+    }
+
+
+    /**
+     * calculate all combinations of MethodOverload fields
+     *
+     * @param n          current process level
+     * @param curElements     current fields
+     * @param curResult  current set of combinations
+     * @param allElement all MethodOverload fields
+     * @return List<List < fieldName>>
+     * @author Leibniz
+     */
+    private List<List<String>> calCombinations(int n, com.sun.tools.javac.util.List<String> curElements, List<List<String>> curResult, List<String> allElement) {
+        if (allElement.size() == n) {
+            curResult.add(curElements);
+        } else {
+            //
+            List<List<String>> tmpRes = calCombinations(n + 1, curElements.append(allElement.get(n)), curResult, allElement); //当前数字选择加入子集
+            calCombinations(n + 1, curElements, tmpRes, allElement); //当前数字选择不加入子集
+        }
+        return curResult;
     }
 
     private Map<String, Object> validateAndParseAnnotation(PsiMethod method, List<PsiAnnotation> methodOverloadAnnotationList, Map<String, String> methodParamTypeMap) {
