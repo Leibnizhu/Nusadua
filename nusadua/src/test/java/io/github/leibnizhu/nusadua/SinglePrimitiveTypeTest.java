@@ -3,7 +3,7 @@ package io.github.leibnizhu.nusadua;
 import io.github.leibnizhu.nusadua.annotation.MethodOverload;
 import org.junit.Test;
 
-import javax.annotation.Generated;
+//import javax.annotation.Generated;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -52,7 +52,7 @@ public class SinglePrimitiveTypeTest {
         assertEquals("Fixed string=fixed, c=X", defaultChar("fixed"));
     }
 
-    @Generated("Test unused annotation")
+    @SuppressWarnings("Test unused annotation")
     @MethodOverload(field = "str", defaultString = "hahaha")
     private String defaultString(String fixed, String str) {
         String result = String.format("Fixed string=%s, str=%s", fixed, str);

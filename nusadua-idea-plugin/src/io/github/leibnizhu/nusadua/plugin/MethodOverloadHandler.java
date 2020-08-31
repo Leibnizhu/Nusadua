@@ -4,7 +4,7 @@ import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.*;
-import com.sun.tools.javac.tree.JCTree;
+import io.github.leibnizhu.nusadua.plugin.psi.NusaduaLightMethodBuilder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,7 +41,7 @@ public class MethodOverloadHandler {
                 Map<String, String> methodParamTypeMap = parseParamTypeMap(method);
                 Map<String, Object> defaultValueMap = validateAndParseAnnotation(method, methodOverloadAnnotationList, methodParamTypeMap);
                 System.out.println(methodName + ":" + defaultValueMap.toString());
-                genNewMethods(defaultValueMap, method, newMethods, curMethodSignSet);
+                genNewMethods(defaultValueMap, psiClass, method, newMethods, curMethodSignSet);
             }
         }
     }
@@ -58,7 +58,7 @@ public class MethodOverloadHandler {
         return paramTypeMap;
     }
 
-    private void genNewMethods(Map<String, Object> defaultValueMap, PsiMethod method, Queue<PsiMethod> newMethods, Set<String> curMethodSignSet) {
+    private void genNewMethods(Map<String, Object> defaultValueMap, PsiClass psiClass, PsiMethod method, Queue<PsiMethod> newMethods, Set<String> curMethodSignSet) {
         //TODO
         //All parameters to calculate
         List<String> allElement = new ArrayList<>(defaultValueMap.keySet());
@@ -79,17 +79,28 @@ public class MethodOverloadHandler {
         }
         LinkedList<Integer> sizeList = new LinkedList<>(allCombinationMap.keySet());
         Collections.sort(sizeList); //keep process size==1's method first, must not method sign conflict
+        Map<String, PsiType> fieldTypeMap = Arrays.stream(method.getParameterList().getParameters())
+                .collect(Collectors.toMap(PsiParameter::getName, PsiParameter::getType));
         for (Integer size : sizeList) {
             boolean errorWhenMethodSignConflict = size == 1;
             for (List<String> fields : allCombinationMap.get(size)) {
                 //TODO use NusaduaLightMethodBuilder, to:
-                // generate new parameter list
-                // generate new parameter value list(statement)
-                // generate method access flag and code block
-                // generate new method, and add to newMethods
+                // generate new parameter list √
+                // generate method access flag √
+                // generate code block
+                // generate new method, and add to newMethods √
+                NusaduaLightMethodBuilder methodBuilder = new NusaduaLightMethodBuilder(method.getManager(), method.getName())
+                        .withMethodReturnType(method.getReturnType())
+                        .withContainingClass(psiClass)
+                        .withModifiers(method.getModifierList())
+                        .withNavigationElement(method);
+                for (String field : fields) {
+                    methodBuilder.withParameter(field, fieldTypeMap.get(field));
+                }
+
+                newMethods.add(methodBuilder);
             }
         }
-        return;
     }
 
 

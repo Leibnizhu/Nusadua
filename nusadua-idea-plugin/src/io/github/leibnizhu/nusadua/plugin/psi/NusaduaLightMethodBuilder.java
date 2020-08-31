@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 
+import static com.intellij.psi.PsiModifier.*;
+
 /**
  * @author Leibniz on 2020/08/30 5:36 PM
  */
@@ -50,6 +52,20 @@ public class NusaduaLightMethodBuilder extends LightMethodBuilder implements Syn
     public NusaduaLightMethodBuilder withModifier(@PsiModifier.ModifierConstant @NotNull @NonNls String... modifiers) {
         for (String modifier : modifiers) {
             addModifier(modifier);
+        }
+        return this;
+    }
+
+    private static final String[] KEEP_MODIFIER_ARR = new String[]{PRIVATE, PUBLIC, PROTECTED, FINAL, STATIC, DEFAULT};
+
+    public NusaduaLightMethodBuilder withModifiers(PsiModifierList modifierList) {
+        if (modifierList == null) {
+            return this;
+        }
+        for (String modifier : KEEP_MODIFIER_ARR) {
+            if (modifierList.hasModifierProperty(modifier)) {
+                addModifier(modifier);
+            }
         }
         return this;
     }
