@@ -1,4 +1,4 @@
-package io.github.leibnizhu.nusadua.plugin.psi;
+package io.github.leibnizhu.nusadua.plugin.builder;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.java.JavaLanguage;
@@ -9,7 +9,7 @@ import com.intellij.psi.impl.light.LightMethodBuilder;
 import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.psi.impl.light.LightTypeParameterListBuilder;
 import com.intellij.util.IncorrectOperationException;
-import io.github.leibnizhu.nusadua.plugin.ReflectionUtil;
+import io.github.leibnizhu.nusadua.plugin.util.ReflectionUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

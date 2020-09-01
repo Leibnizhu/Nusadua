@@ -4,7 +4,9 @@ import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.*;
-import io.github.leibnizhu.nusadua.plugin.psi.NusaduaLightMethodBuilder;
+import io.github.leibnizhu.nusadua.plugin.builder.NusaduaLightMethodBuilder;
+import io.github.leibnizhu.nusadua.plugin.util.PsiAnnotationUtil;
+import io.github.leibnizhu.nusadua.plugin.util.PsiMethodUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -84,7 +86,7 @@ public class MethodOverloadHandler {
         for (Integer size : sizeList) {
             boolean errorWhenMethodSignConflict = size == 1;
             for (List<String> fields : allCombinationMap.get(size)) {
-                //TODO use NusaduaLightMethodBuilder, to:
+                //use NusaduaLightMethodBuilder, to:
                 // generate new parameter list √
                 // generate method access flag √
                 // generate code block
@@ -97,7 +99,9 @@ public class MethodOverloadHandler {
                 for (String field : fields) {
                     methodBuilder.withParameter(field, fieldTypeMap.get(field));
                 }
-
+                //TODO validate method sign conflict
+                String codeBlockText = ""; //TODO generate code block
+                methodBuilder.withBody(PsiMethodUtil.createCodeBlockFromText(codeBlockText, methodBuilder));
                 newMethods.add(methodBuilder);
             }
         }

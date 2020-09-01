@@ -1,4 +1,4 @@
-package io.github.leibnizhu.nusadua.plugin.psi;
+package io.github.leibnizhu.nusadua.plugin.builder;
 
 import com.intellij.lang.Language;
 import com.intellij.openapi.util.TextRange;
@@ -6,7 +6,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightModifierList;
 import com.intellij.psi.impl.light.LightParameter;
 import com.intellij.psi.impl.light.LightVariableBuilder;
-import io.github.leibnizhu.nusadua.plugin.ReflectionUtil;
+import io.github.leibnizhu.nusadua.plugin.util.ReflectionUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;

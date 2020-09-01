@@ -1,4 +1,4 @@
-package io.github.leibnizhu.nusadua.plugin.psi;
+package io.github.leibnizhu.nusadua.plugin.builder;
 
 import com.intellij.lang.Language;
 import com.intellij.openapi.util.TextRange;

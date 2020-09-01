@@ -1,4 +1,4 @@
-package io.github.leibnizhu.nusadua.plugin;
+package io.github.leibnizhu.nusadua.plugin.util;
 
 import com.intellij.openapi.diagnostic.Logger;
 
