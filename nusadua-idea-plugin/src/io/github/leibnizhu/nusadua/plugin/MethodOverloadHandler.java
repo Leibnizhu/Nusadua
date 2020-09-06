@@ -61,9 +61,9 @@ public class MethodOverloadHandler {
     }
 
     private void genNewMethods(Map<String, Object> defaultValueMap, PsiClass psiClass, PsiMethod method, Queue<PsiMethod> newMethods, Set<String> curMethodSignSet) {
-        //TODO
-        //All parameters to calculate
+        //All parameters to calculate full set
         List<String> allElement = new ArrayList<>(defaultValueMap.keySet());
+        //full default parameter set group by size
         Map<Integer, List<List<String>>> allCombinationMap = allElement.isEmpty() ? new HashMap<>() :
                 calCombinations(0, nil(), new LinkedList<>(), allElement) //calculate Cartesian Product
                         .stream()
@@ -85,7 +85,21 @@ public class MethodOverloadHandler {
                 .collect(Collectors.toMap(PsiParameter::getName, PsiParameter::getType));
         for (Integer size : sizeList) {
             boolean errorWhenMethodSignConflict = size == 1;
-            for (List<String> fields : allCombinationMap.get(size)) {
+            for (List<String> defaultValueFields : allCombinationMap.get(size)) {
+                //check method sign conflict
+                List<PsiParameter> newParamList = Arrays.stream(method.getParameterList().getParameters())
+                        .filter(param -> !defaultValueFields.contains(param.getName()))
+                        .collect(Collectors.toList());
+                String newMethodSign = calMethodSign(newParamList);
+                if (curMethodSignSet.contains(newMethodSign)) {
+                    String errMsg = String.format("method '%s' with same signature (%s) already existed! Can not continue!", method.getName(), newParamList);
+                    log.error(errMsg);
+                    if (errorWhenMethodSignConflict) {
+                        //FIXME throw compile error
+                    }
+                    continue;
+                }
+                curMethodSignSet.add(newMethodSign);
                 //use NusaduaLightMethodBuilder, to:
                 // generate new parameter list √
                 // generate method access flag √
@@ -96,15 +110,39 @@ public class MethodOverloadHandler {
                         .withContainingClass(psiClass)
                         .withModifiers(method.getModifierList())
                         .withNavigationElement(method);
-                for (String field : fields) {
-                    methodBuilder.withParameter(field, fieldTypeMap.get(field));
-                }
-                //TODO validate method sign conflict
-                String codeBlockText = ""; //TODO generate code block
+//                for (String field : defaultValueFields) {
+//                    methodBuilder.withParameter(field, fieldTypeMap.get(field));
+//                }
+                String codeBlockText = genMethodBody(method, defaultValueMap, defaultValueFields, methodBuilder, fieldTypeMap); //TODO generate code block
                 methodBuilder.withBody(PsiMethodUtil.createCodeBlockFromText(codeBlockText, methodBuilder));
                 newMethods.add(methodBuilder);
+                System.out.println("new method:" + methodBuilder.getText());
             }
         }
+    }
+
+    private String genMethodBody(PsiMethod method, Map<String, Object> defaultValueMap, List<String> defaultValueFields,
+                                 NusaduaLightMethodBuilder methodBuilder, Map<String, PsiType> fieldTypeMap) {
+        StringJoiner paramsSj = new StringJoiner(",");
+        for (PsiParameter parameter : method.getParameterList().getParameters()) {
+            String curParamName = parameter.getName();
+            if (defaultValueFields.contains(curParamName)) {
+                Object defaultValue = defaultValueMap.get(curParamName);
+                if (defaultValue == null) {
+                    paramsSj.add("null");
+                } else if (defaultValue instanceof String) {
+                    paramsSj.add("\"" + defaultValue + "\"");
+                } else {
+                    paramsSj.add(defaultValue.toString());
+                }
+            } else {
+                paramsSj.add(curParamName);
+                methodBuilder.withParameter(curParamName, fieldTypeMap.get(curParamName));
+            }
+        }
+        boolean hasReturn = method.getReturnType() != null && !"void".equals(method.getReturnType().getPresentableText());
+        String returnClause = hasReturn ? "return " : "";
+        return String.format("%s%s(%s);", returnClause, method.getName(), paramsSj.toString());
     }
 
 
@@ -192,6 +230,21 @@ public class MethodOverloadHandler {
     private String calMethodSign(PsiParameter[] parameterArr) {
         StringJoiner sj = new StringJoiner("_");
         for (PsiParameter psiParameter : parameterArr) {
+            sj.add(psiParameter.getType().getCanonicalText());
+        }
+        return sj.toString();
+    }
+
+    /**
+     * calculate method signature by method parameters, join by '_'
+     *
+     * @param parameterList method parameter List
+     * @return method signature
+     * @author Leibniz
+     */
+    private String calMethodSign(List<PsiParameter> parameterList) {
+        StringJoiner sj = new StringJoiner("_");
+        for (PsiParameter psiParameter : parameterList) {
             sj.add(psiParameter.getType().getCanonicalText());
         }
         return sj.toString();
